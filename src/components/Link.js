@@ -1,7 +1,7 @@
 import React from 'react'
 import { AUTH_TOKEN } from '../constants'
 import { timeDifferenceForDate } from '../utils'
-
+import get from 'lodash/get';
 import gql from 'graphql-tag'
 import { useMutation } from 'react-apollo'
 
@@ -28,11 +28,12 @@ const VOTE_MUTATION = gql`
 const Link = ({ link, index, updateStoreAfterVote }) => {
   const authToken = localStorage.getItem(AUTH_TOKEN)
 
-  const [voteMutation] = useMutation(VOTE_MUTATION, {
+  const [voteMutation, {loading, error}] = useMutation(VOTE_MUTATION, {
     variables: {
       linkId: link.id
     },
-    update: (store, { data: { vote } }) => updateStoreAfterVote(store, vote, link.id)
+    update: (store, { data: { vote } }) => updateStoreAfterVote(store, vote, link.id),
+    onError: (error) => console.log(error)
   });
 
   return (
@@ -50,11 +51,13 @@ const Link = ({ link, index, updateStoreAfterVote }) => {
           {link.description} ({link.url})
         </div>
         <div className="f6 lh-copy gray">
-          {link.votes.length} votes | by{' '}
+          {!loading && `${link.votes.length} votes | by ${' '}`}
+          {loading && 'loading...'}
           {link.postedBy
             ? link.postedBy.name
             : 'Unknown'}{' '}
-          {timeDifferenceForDate(link.createdAt)}
+          {timeDifferenceForDate(link.createdAt)}{' '}
+          {error && `| ${get(error, 'graphQLErrors[0].message', 'Error!')}`}
         </div>
       </div>
     </div>
